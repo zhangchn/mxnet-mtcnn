@@ -20,7 +20,23 @@
 #include <fstream>
 
 #include <opencv2/opencv.hpp>
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+#include <Windows.h>
+#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+unsigned long get_cur_time(void)
+{
+	FILETIME ft; 
+	GetSystemTimeAsFileTime(&ft);
+	unsigned __int64 tmpres = 0;
+	tmpres |= ft.dwHighDateTime;
+	tmpres <<= 32;
+	tmpres |= ft.dwLowDateTime;
 
+	tmpres -= DELTA_EPOCH_IN_MICROSECS;
+	tmpres /= 10;
+	return tmpres;
+}
+#else
 #include <sys/time.h>
 
 
@@ -35,7 +51,7 @@ unsigned long get_cur_time(void)
 
 	return ts;
 }
-
+#endif
 void save_float(const char * name, const float * data, int size)
 {
 	char fname[128];

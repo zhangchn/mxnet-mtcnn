@@ -1,6 +1,7 @@
 message(STATUS "===========module libmtcnn===========")
 message(STATUS "Project source Directory: ${PROJECT_SOURCE_DIR}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # include头文件目录
 include_directories( ${OpenCV_INCLUDE_DIRS}
@@ -9,7 +10,12 @@ include_directories( ${OpenCV_INCLUDE_DIRS}
                     )
 
 # library目录及name名称
-link_directories(${PROJECT_SOURCE_DIR}/3rdparty/lib)
+link_directories(
+    ${PROJECT_SOURCE_DIR}/3rdparty/lib
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/lib
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/build
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/3rdparty/bin
+    )
 
 list(APPEND FACE_DETECT_LINKER_LIBS mxnet)
 
@@ -26,9 +32,10 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 add_library(mtcnn SHARED ${MTCNN_COMPILE_CODE})
 
 # generate static library
-#add_library(mtcnn_static STATIC ${MTCNN_COMPILE_CODE})
+add_library(mtcnn_static STATIC ${MTCNN_COMPILE_CODE})
 
 # 指定静态库的输出名称
-#set_target_properties(mtcnn_static PROPERTIES OUTPUT_NAME "mtcnn")
+set_target_properties(mtcnn_static PROPERTIES OUTPUT_NAME "mtcnn")
 
-target_link_libraries(mtcnn mxnet ${OpenCV_LIBS})
+target_link_libraries(mtcnn libmxnet ${OpenCV_LIBS})
+target_link_libraries(mtcnn_static libmxnet ${OpenCV_LIBS})

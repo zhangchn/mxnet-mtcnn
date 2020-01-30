@@ -110,7 +110,12 @@ class  only_for_auto_register
 };
 
 // TODO: remove the implementation
+#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
+#define REGISTER_MTCNN_CREATOR(name,func) \
+	 static only_for_auto_register dummy_mtcnn_creator_## name (#name, func)
+#else
 #define REGISTER_MTCNN_CREATOR(name,func) \
 	 static only_for_auto_register __attribute__((used)) dummy_mtcnn_creator_## name (#name, func)
+#endif
 
 #endif
