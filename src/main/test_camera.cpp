@@ -59,7 +59,7 @@ int main(int argc, char * argv[])
 
 
     Mtcnn * p_mtcnn = MtcnnFactory::CreateDetector(type);
-
+    p_mtcnn->SetFactorMinSize(0.709, 120);
     if (p_mtcnn == nullptr) {
         std::cerr << type << " is not supported" << std::endl;
         std::cerr << "supported types: ";
