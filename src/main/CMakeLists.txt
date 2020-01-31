@@ -5,7 +5,13 @@ include_directories( ${OpenCV_INCLUDE_DIRS}
                    )
 
 # library目录及name名称
-link_directories(${PROJECT_SOURCE_DIR}/lib ${PROJECT_SOURCE_DIR}/3rdparty/lib)
+link_directories(
+${PROJECT_SOURCE_DIR}/lib 
+${PROJECT_SOURCE_DIR}/3rdparty/lib
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/lib
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/build
+    ${PROJECT_SOURCE_DIR}/3rdparty/mxnet/3rdparty/bin
+)
 
 
 # test picture execute file

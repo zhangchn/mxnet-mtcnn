@@ -13,7 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#if defined(__unix__) || defined(__MACOSX__) || defined(__linux__)
 #include <unistd.h>
+#endif
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
@@ -33,6 +35,7 @@ int main(int argc, char * argv[])
     std::string model_dir = "../models";
 
     int res;
+#if !defined(_MSC_VER)
     while ((res = getopt(argc, argv, "t:")) != -1) {
         switch (res) {
             case 't':
@@ -45,6 +48,7 @@ int main(int argc, char * argv[])
                 break;
         }
     }
+#endif
 
     cv::VideoCapture camera(CAMID);
 
@@ -55,7 +59,7 @@ int main(int argc, char * argv[])
 
 
     Mtcnn * p_mtcnn = MtcnnFactory::CreateDetector(type);
-
+    p_mtcnn->SetFactorMinSize(0.709, 120);
     if (p_mtcnn == nullptr) {
         std::cerr << type << " is not supported" << std::endl;
         std::cerr << "supported types: ";
