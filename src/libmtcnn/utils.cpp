@@ -20,38 +20,14 @@
 #include <fstream>
 
 #include <opencv2/opencv.hpp>
-#if defined(_MSC_VER) || defined(_MSC_EXTENSIONS)
-#include <Windows.h>
-#define DELTA_EPOCH_IN_MICROSECS  11644473600000000Ui64
+#include <chrono>
 unsigned long get_cur_time(void)
 {
-	FILETIME ft; 
-	GetSystemTimeAsFileTime(&ft);
-	unsigned __int64 tmpres = 0;
-	tmpres |= ft.dwHighDateTime;
-	tmpres <<= 32;
-	tmpres |= ft.dwLowDateTime;
-
-	tmpres -= DELTA_EPOCH_IN_MICROSECS;
-	tmpres /= 10;
-	return tmpres;
+    unsigned long us = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::
+                  now().time_since_epoch()).count();
+    return us;
 }
-#else
-#include <sys/time.h>
 
-
-unsigned long get_cur_time(void)
-{
-	struct timeval tv;
-	unsigned long ts;
-
-	gettimeofday(&tv,NULL);
-
-	ts=tv.tv_sec*1000000+tv.tv_usec;
-
-	return ts;
-}
-#endif
 void save_float(const char * name, const float * data, int size)
 {
 	char fname[128];
