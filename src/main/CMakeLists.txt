@@ -28,4 +28,11 @@ set_target_properties(test_camera
         RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
 )
 
-
+add_executable(stream_process stream_process.cpp)
+target_link_libraries(stream_process mtcnn ${OpenCV_LIBS})
+set_target_properties(stream_process
+        PROPERTIES
+        ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
+        LIBRARY_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib"
+        RUNTIME_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/bin"
+)
