@@ -21,6 +21,7 @@
 #include <vector>
 #include <memory>
 #include <mutex>
+#include <condition_variable>
 #include <thread>
 
 #include "mtcnn.hpp"
@@ -34,7 +35,9 @@ std::deque<cv::Mat> frame_buffer;
 std::deque<std::chrono::time_point<std::chrono::system_clock>> frame_timestamp;
 std::chrono::time_point<std::chrono::system_clock> frame_timestamp_displayed;
 std::mutex fb_mutex;
+std::condition_variable non_empty;
 std::vector<face_box> face_info;
+std::mutex init_mutex;
 //std::chrono::milliseconds timestamp = -1;
 bool should_quit = false;
 void detect() {
@@ -42,6 +45,7 @@ void detect() {
     std::string model_dir = "../models";
     Mtcnn * p_mtcnn;
 
+    init_mutex.lock();
     p_mtcnn = MtcnnFactory::CreateDetector(type);
 
     if (p_mtcnn == nullptr) {
@@ -57,20 +61,30 @@ void detect() {
         return ;
     }
 
-    p_mtcnn->SetFactorMinSize(0.709, 120);
+    p_mtcnn->SetFactorMinSize(0.709, 180);
     p_mtcnn->LoadModule(model_dir);
+    init_mutex.unlock();
     do {
-        fb_mutex.lock();
-        if (frame_buffer.empty()) {
-            fb_mutex.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(30));
-            continue;        
+        //fb_mutex.lock();
+        std::unique_lock<std::mutex> lk(fb_mutex);
+        non_empty.wait(lk, []{
+                return should_quit || !frame_buffer.empty();
+                });
+        if (should_quit) {
+            break;
         }
+        //if (frame_buffer.empty()) {
+            //fb_mutex.unlock();
+        //    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+        //    continue;        
+        //}
         cv::Mat frame = frame_buffer.front();
         auto frame_time = frame_timestamp.front();
         frame_buffer.pop_front();
         frame_timestamp.pop_front();
-        fb_mutex.unlock();
+        //fb_mutex.unlock();
+        lk.unlock();
+        //non_empty.notify_one();
 
         if (frame_time < frame_timestamp_displayed) {
             continue;
@@ -138,7 +152,7 @@ int main(int argc, char * argv[])
     //}
     std::thread worker1(detect);
     std::thread worker2(detect);
-    //std::thread worker3(detect);
+    std::thread worker3(detect);
     do {
         cv::Mat frame;
         camera >> frame;
@@ -148,15 +162,20 @@ int main(int argc, char * argv[])
             break;
         }
 
-        fb_mutex.lock();
-        frame_buffer.push_back(frame);
-        frame_timestamp.push_back(std::chrono::system_clock::now());
-        if (frame_buffer.size() > 5) {
-            frame_buffer.pop_front();
-            frame_timestamp.pop_front();
+        //fb_mutex.lock();
+        std::vector<face_box> temp_faces;
+        {
+            std::lock_guard<std::mutex> lk(fb_mutex);
+            frame_buffer.push_back(frame);
+            frame_timestamp.push_back(std::chrono::system_clock::now());
+            if (frame_buffer.size() > 3) {
+                frame_buffer.pop_front();
+                frame_timestamp.pop_front();
+            }
+            temp_faces = face_info;
         }
-        std::vector<face_box> temp_faces = face_info;
-        fb_mutex.unlock();
+        //fb_mutex.unlock();
+        non_empty.notify_one();
 
         /*
         start_time = get_cur_time();
@@ -185,8 +204,9 @@ int main(int argc, char * argv[])
 
     } while (QUIT_KEY != cv::waitKey(1));
     should_quit = true;
+    non_empty.notify_all();
     worker1.join();
     worker2.join();
-    //worker3.join();
+    worker3.join();
     return 0;
 }
