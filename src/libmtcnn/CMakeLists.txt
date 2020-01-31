@@ -5,9 +5,9 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # include头文件目录
 include_directories( ${OpenCV_INCLUDE_DIRS}
-                    ${PROJECT_SOURCE_DIR}/include
-					${PROJECT_SOURCE_DIR}/3rdparty/include
-                    )
+        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/3rdparty/include
+        )
 
 # library目录及name名称
 link_directories(
@@ -36,6 +36,10 @@ add_library(mtcnn_static STATIC ${MTCNN_COMPILE_CODE})
 
 # 指定静态库的输出名称
 set_target_properties(mtcnn_static PROPERTIES OUTPUT_NAME "mtcnn")
-
-target_link_libraries(mtcnn libmxnet ${OpenCV_LIBS})
-target_link_libraries(mtcnn_static libmxnet ${OpenCV_LIBS})
+if(WIN32)
+        target_link_libraries(mtcnn libmxnet ${OpenCV_LIBS})
+        target_link_libraries(mtcnn_static libmxnet ${OpenCV_LIBS})
+else()
+        target_link_libraries(mtcnn mxnet ${OpenCV_LIBS})
+        target_link_libraries(mtcnn_static mxnet ${OpenCV_LIBS})
+endif()
