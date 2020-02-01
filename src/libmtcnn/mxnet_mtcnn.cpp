@@ -77,10 +77,14 @@ MxNetMtcnn::~MxNetMtcnn(void)
 
 void MxNetMtcnn::LoadPNet(int h, int w)
 {
+	int key = (h << 16) | w;
+	if (PNetBySize.find(key) != PNetBySize.end()) {
+		return;
+	}
 	std::string param_file= model_dir_+"/det1-0001.params";
 	std::string json_file=model_dir_+"/det1-symbol.json";
 
-	PNet_=LoadMxNetModule(param_file,json_file,1,3,h,w);
+	PNetBySize[key] = LoadMxNetModule(param_file,json_file,1,3,h,w);
 }
 
 void MxNetMtcnn::FreePNet(void)
@@ -288,14 +292,14 @@ void MxNetMtcnn::RunPNet(const cv::Mat& img, scale_window& win, std::vector<face
 
 	cv::split(resized, input_channels);
 
-
-	MXPredSetInput(PNet_,"data",input.data(),input.size());
-	MXPredForward(PNet_);
+	PredictorHandle PNet = PNetBySize[(scale_h << 16) | scale_w];
+	MXPredSetInput(PNet,"data",input.data(),input.size());
+	MXPredForward(PNet);
 
 	mx_uint *shape = NULL;
 	mx_uint shape_len = 0;
 
-	MXPredGetOutputShape(PNet_,0,&shape,&shape_len);
+	MXPredGetOutputShape(PNet,0,&shape,&shape_len);
 
 
 	int reg_size=1;
@@ -303,7 +307,7 @@ void MxNetMtcnn::RunPNet(const cv::Mat& img, scale_window& win, std::vector<face
 	for(unsigned int i=0;i<shape_len;i++)
 		reg_size*=shape[i];
 
-	MXPredGetOutputShape(PNet_,1,&shape,&shape_len);
+	MXPredGetOutputShape(PNet,1,&shape,&shape_len);
 
 	int confidence_size=1;
 
@@ -313,8 +317,8 @@ void MxNetMtcnn::RunPNet(const cv::Mat& img, scale_window& win, std::vector<face
 	std::vector<float> reg(reg_size);
 	std::vector<float> confidence(confidence_size);
 
-	MXPredGetOutput(PNet_,0, reg.data(), reg_size);
-	MXPredGetOutput(PNet_,1, confidence.data(), confidence_size);
+	MXPredGetOutput(PNet,0, reg.data(), reg_size);
+	MXPredGetOutput(PNet,1, confidence.data(), confidence_size);
 
 
 	std::vector<face_box>  candidate_boxes;
@@ -324,7 +328,7 @@ void MxNetMtcnn::RunPNet(const cv::Mat& img, scale_window& win, std::vector<face
 
 	generate_bounding_box(confidence.data(),confidence.size(), reg.data(), scale, pnet_threshold_, feature_h, feature_w, candidate_boxes,false);
 	nms_boxes(candidate_boxes, 0.5, NMS_UNION,box_list);
-	FreePNet();
+	//FreePNet();
 }
 
 void MxNetMtcnn::CopyOnePatch(const cv::Mat& img,face_box&input_box,float * data_to, int height, int width)

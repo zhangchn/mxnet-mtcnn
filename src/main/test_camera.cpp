@@ -13,7 +13,7 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
-#if defined(__unix__) || defined(__MACOSX__) || defined(__linux__)
+#if defined(__unix__) || defined(__APPLE__) || defined(__linux__)
 #include <unistd.h>
 #endif
 #include <opencv2/opencv.hpp>

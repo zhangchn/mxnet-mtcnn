@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "mtcnn.hpp"
 #include "mxnet/c_predict_api.h"
@@ -53,6 +54,7 @@ class MxNetMtcnn: public Mtcnn {
 		PredictorHandle  PNet_;  //PNet_ will create and destroyed frequently
 		PredictorHandle  RNet_;
 		PredictorHandle  ONet_;
+        std::unordered_map<int, PredictorHandle> PNetBySize;
         int rnet_batch_bound_;
         int onet_batch_bound_;
 
