@@ -13,7 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#if defined (__APPLE__) || defined(__linux__)
 #include <unistd.h>
+#endif
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <fstream>
@@ -61,7 +63,7 @@ void detect() {
         return ;
     }
 
-    p_mtcnn->SetFactorMinSize(0.709, 180);
+    p_mtcnn->SetFactorMinSize(0.709, 350);
     p_mtcnn->LoadModule(model_dir);
     init_mutex.unlock();
     do {
@@ -76,7 +78,7 @@ void detect() {
         //if (frame_buffer.empty()) {
             //fb_mutex.unlock();
         //    std::this_thread::sleep_for(std::chrono::milliseconds(30));
-        //    continue;        
+        //    continue;
         //}
         cv::Mat frame = frame_buffer.front();
         auto frame_time = frame_timestamp.front();
@@ -118,6 +120,7 @@ int main(int argc, char * argv[])
 
     frame_timestamp_displayed = std::chrono::system_clock::now();
     int res;
+#if defined(__APPLE__) ||defined(__linux__)
     while ((res = getopt(argc, argv, "t:")) != -1) {
         switch (res) {
             case 't':
@@ -130,9 +133,12 @@ int main(int argc, char * argv[])
                 break;
         }
     }
+#endif
+    //cv::VideoCapture camera(CAMID);
+    cv::VideoCapture camera("rtsp://192.168.1.38", cv::CAP_FFMPEG);
 
-    cv::VideoCapture camera(CAMID);
-
+    //camera.set(cv::CAP_PROP_FRAME_WIDTH, 960);
+    //camera.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
     if (!camera.isOpened()) {
         std::cerr << "failed to open camera" << std::endl;
         return 1;
@@ -152,7 +158,10 @@ int main(int argc, char * argv[])
     //}
     std::thread worker1(detect);
     std::thread worker2(detect);
-    std::thread worker3(detect);
+    //std::thread worker3(detect);
+    //std::thread worker4(detect);
+    //std::thread worker5(detect);
+    //std::thread worker6(detect);
     do {
         cv::Mat frame;
         camera >> frame;
@@ -207,6 +216,9 @@ int main(int argc, char * argv[])
     non_empty.notify_all();
     worker1.join();
     worker2.join();
-    worker3.join();
+    /* worker3.join();
+    worker4.join();
+    worker5.join();
+    worker6.join();*/
     return 0;
 }

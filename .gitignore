@@ -3,3 +3,4 @@ bin/
 build/
 lib/
 /.vs
+/3rdparty/mxnet/3rdparty/cudnn/cudnn64_70.dll

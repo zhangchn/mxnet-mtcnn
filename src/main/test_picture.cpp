@@ -13,7 +13,9 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+#if defined(__APPLE__) ||defined(__linux__)
 #include <unistd.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -31,6 +33,7 @@ int main(int argc, char * argv[])
     int save_chop = 0;
 
     int res;
+#if defined(__APPLE__) ||defined(__linux__)
 
     while ((res = getopt(argc,argv,"f:m:o:t:s")) != -1) {
         switch (res) {
@@ -53,7 +56,7 @@ int main(int argc, char * argv[])
                 break;
         }
     }
-
+#endif
 
     //cv::namedWindow(fpath, cv::WINDOW_AUTOSIZE);
 

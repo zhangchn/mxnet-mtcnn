@@ -56,7 +56,8 @@ int main(int argc, char * argv[])
         std::cerr << "failed to open camera" << std::endl;
         return 1;
     }
-
+    camera.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+    camera.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
 
     Mtcnn * p_mtcnn = MtcnnFactory::CreateDetector(type);
     p_mtcnn->SetFactorMinSize(0.709, 120);
