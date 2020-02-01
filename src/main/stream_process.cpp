@@ -59,7 +59,7 @@ void detect() {
             std::cerr << " " << type_list[i];
 
         std::cerr << std::endl;
-
+        init_mutex.unlock();
         return ;
     }
 
@@ -86,7 +86,7 @@ void detect() {
         frame_timestamp.pop_front();
         //fb_mutex.unlock();
         lk.unlock();
-        //non_empty.notify_one();
+        non_empty.notify_one();
 
         if (frame_time < frame_timestamp_displayed) {
             continue;
@@ -135,7 +135,7 @@ int main(int argc, char * argv[])
     }
 #endif
     //cv::VideoCapture camera(CAMID);
-    cv::VideoCapture camera("rtsp://192.168.1.38", cv::CAP_FFMPEG);
+    cv::VideoCapture camera("rtsp://admin:8358s12s@192.168.1.38", cv::CAP_FFMPEG);
 
     //camera.set(cv::CAP_PROP_FRAME_WIDTH, 960);
     //camera.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
@@ -151,17 +151,12 @@ int main(int argc, char * argv[])
     unsigned long start_time = 0;
     unsigned long end_time = 0;
 
-    //std::vector<const std::thread &> workers;
-    //for (int ti = 0; ti < 3; ti++) {
-        //worker.detach();
-        //workers.push_back(worker);
-    //}
-    std::thread worker1(detect);
-    std::thread worker2(detect);
-    //std::thread worker3(detect);
-    //std::thread worker4(detect);
-    //std::thread worker5(detect);
-    //std::thread worker6(detect);
+    std::vector<std::thread> workers;
+    int num_threads = 2;
+    for (int ti = 0; ti < num_threads; ti++) {
+        workers.push_back(std::thread(detect));
+    }
+
     do {
         cv::Mat frame;
         camera >> frame;
@@ -214,11 +209,9 @@ int main(int argc, char * argv[])
     } while (QUIT_KEY != cv::waitKey(1));
     should_quit = true;
     non_empty.notify_all();
-    worker1.join();
-    worker2.join();
-    /* worker3.join();
-    worker4.join();
-    worker5.join();
-    worker6.join();*/
+    for (int ti = 0; ti < num_threads; ti++) {
+        workers[ti].join();
+    }
+
     return 0;
 }

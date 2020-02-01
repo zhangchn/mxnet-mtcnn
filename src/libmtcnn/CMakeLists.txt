@@ -32,14 +32,14 @@ SET(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 add_library(mtcnn SHARED ${MTCNN_COMPILE_CODE})
 
 # generate static library
-add_library(mtcnn_static STATIC ${MTCNN_COMPILE_CODE})
+#add_library(mtcnn_static STATIC ${MTCNN_COMPILE_CODE})
 
 # 指定静态库的输出名称
-set_target_properties(mtcnn_static PROPERTIES OUTPUT_NAME "mtcnn")
+#set_target_properties(mtcnn_static PROPERTIES OUTPUT_NAME "mtcnn")
 if(WIN32)
         target_link_libraries(mtcnn libmxnet ${OpenCV_LIBS})
-        target_link_libraries(mtcnn_static libmxnet ${OpenCV_LIBS})
+        #target_link_libraries(mtcnn_static libmxnet ${OpenCV_LIBS})
 else()
         target_link_libraries(mtcnn mxnet ${OpenCV_LIBS})
-        target_link_libraries(mtcnn_static mxnet ${OpenCV_LIBS})
+        #target_link_libraries(mtcnn_static mxnet ${OpenCV_LIBS})
 endif()
