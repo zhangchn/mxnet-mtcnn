@@ -24,6 +24,7 @@ std::mutex init_mutex;
 //std::chrono::milliseconds timestamp = -1;
 bool should_quit = true;
 DetectCallBack _cb = nullptr;
+DetectCallBack2 _cb2 = nullptr;
 int queue_size = 5;
 
 static void detect();
@@ -36,6 +37,23 @@ bool detectSetup(int numThread, int queueSize, DetectCallBack cb) {
     }
     should_quit = false;
     _cb = cb;
+    for (int ti = 0; ti < numThread; ti++) {
+        thread_pool.push_back(std::thread(detect));
+    }
+
+    return true;
+}
+
+bool detectSetup(int numThread, int queueSize, DetectCallBack2 cb) {
+    if (!should_quit) {
+        return false;
+    }
+    if (cb == NULL) {
+        return false;
+    }
+    should_quit = false;
+    _cb2 = cb;
+
     for (int ti = 0; ti < numThread; ti++) {
         thread_pool.push_back(std::thread(detect));
     }
@@ -92,15 +110,17 @@ static void detect() {
         return;
     }
 
-    p_mtcnn->SetFactorMinSize(0.709, 350);
+    p_mtcnn->SetFactorMinSize(0.709, 220);
     p_mtcnn->LoadModule(model_dir);
     init_mutex.unlock();
     do {
         //fb_mutex.lock();
         std::unique_lock<std::mutex> lk(fb_mutex);
         non_empty.wait(lk, [] {
-            return should_quit || (!frame_buffer.empty() && _cb != nullptr);
-            });
+                return should_quit || !(
+                        frame_buffer.empty() 
+                        || (_cb == nullptr && _cb2 == nullptr));
+                });
         if (should_quit) {
             break;
         }
@@ -115,7 +135,11 @@ static void detect() {
         p_mtcnn->Detect(frame, temp_faces);
         unsigned long end_time = get_cur_time();
 
-        _cb(temp_faces, userData);
+        if (_cb != nullptr) {
+            _cb(temp_faces, userData);
+        } else {
+            _cb2(temp_faces, frame, userData);
+        }
         std::cout << "total detected: " << temp_faces.size() << " faces. used "
             << (end_time - start_time) << " us" << std::endl;
     } while (!should_quit);
