@@ -14,7 +14,8 @@ void cb1(std::vector<face_box> faceList, void* userData) {
 
 int main(int argc, char* argv[])
 {
-	cv::VideoCapture camera("rtsp://admin:8358s12s@192.168.1.38", cv::CAP_FFMPEG);
+	//cv::VideoCapture camera("rtsp://admin:8358s12s@192.168.1.38", cv::CAP_FFMPEG);
+	cv::VideoCapture camera(0);
 	detectSetup(1, 3, cb1);
 	cv::namedWindow(DISP_WINNANE, cv::WINDOW_AUTOSIZE);
 	do {

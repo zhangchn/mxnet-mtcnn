@@ -104,22 +104,19 @@ static void detect() {
         if (should_quit) {
             break;
         }
-        
         cv::Mat frame = frame_buffer.front();
         frame_buffer.pop_front();
         void* userData = frame_userdata.front();
         frame_userdata.pop_front();
         lk.unlock();
         
-        unsigned long start_time = 0;
-        unsigned long end_time = 0;
         std::vector<face_box> temp_faces;
-        start_time = get_cur_time();
+        unsigned long start_time = get_cur_time();
         p_mtcnn->Detect(frame, temp_faces);
-        end_time = get_cur_time();
+        unsigned long end_time = get_cur_time();
 
         _cb(temp_faces, userData);
-        /*std::cout << "total detected: " << temp_faces.size() << " faces. used "
-            << (end_time - start_time) << " us" << std::endl;*/
+        std::cout << "total detected: " << temp_faces.size() << " faces. used "
+            << (end_time - start_time) << " us" << std::endl;
     } while (!should_quit);
 }
