@@ -37,51 +37,51 @@ void cb2(std::vector<face_box> faces, const cv::Mat &image, void* userData) {
 	result_saturated.notify_one();
 }
 
-static void do_extract(const char *filepath, const std::string &filename)
+static void do_extract_image(const char *filepath, const std::string &filename)
+{
+    std::cout << "detect image: "<< filename << std::endl;
+	detectSetup(1, 3, cb2);
+    cv::Mat img = cv::imread(filepath);
+    current_file = filename;
+	current_out_idx=0;
+    if (!img.data) {
+        detectStop();
+        return;
+    }
+    pending = 1;
+    detectImage(img, (void *)filepath);
+    std::unique_lock<std::mutex> lk(resultLock);
+    result_saturated.wait(lk, [] {
+            return pending == 0;
+            });
+
+	detectStop();
+}
+
+static void do_extract_video(const char *filepath, const std::string &filename)
 {
 	cv::VideoCapture camera(filepath, cv::CAP_FFMPEG);
 	detectSetup(1, 3, cb2);
-	cv::namedWindow(DISP_WINNANE, cv::WINDOW_AUTOSIZE);
+	//cv::namedWindow(DISP_WINNANE, cv::WINDOW_AUTOSIZE);
 	current_file = filename;
 	current_out_idx=0;
 	int frame_stride = 20;
 	do {
-		cv::Mat img;
-		for (int counter = 1; counter < frame_stride; counter++) {
-			camera.grab(); 
-		}
-		camera >> img;
-		if (img.data == NULL) {
-			break;
-		}
-		std::unique_lock<std::mutex> lk(resultLock);
-		result_saturated.wait(lk, [] {
-				return pending < 4;
-				});
-		pending++;
-		lk.unlock();
-		detectImage(img, (void *)filepath);
-		
-		//resultLock.lock();
-		//std::vector<face_box> faces = faceinfo;
-		//resultLock.unlock();
-		/*
-
-		for (unsigned int i = 0; i < faces.size(); i++) {
-			face_box& box = faces[i];
-
-			//draw box 
-			cv::rectangle(img, cv::Point(box.x0, box.y0),
-				cv::Point(box.x1, box.y1), cv::Scalar(0, 255, 0), 2);
-
-			// draw landmark 
-			for (int l = 0; l < 5; l++) {
-				cv::circle(img, cv::Point(box.landmark.x[l],
-					box.landmark.y[l]), 2, cv::Scalar(0, 0, 255), 2);
-			}
-		}
-		cv::imshow(DISP_WINNANE, img);
-		*/
+        cv::Mat img;
+        for (int counter = 1; counter < frame_stride; counter++) {
+            camera.grab(); 
+        }
+        camera >> img;
+        if (img.data == NULL) {
+            break;
+        }
+        std::unique_lock<std::mutex> lk(resultLock);
+        result_saturated.wait(lk, [] {
+                return pending < 4;
+                });
+        pending++;
+        lk.unlock();
+        detectImage(img, (void *)filepath);
 	} while (true);
 	detectStop();
 }
@@ -98,7 +98,15 @@ int main(int argc, char* argv[])
 			continue;
 		}
 		std::cout << "processing input:" << fpath << std::endl;
-		do_extract(argv[arg_idx], name);
+        if (std::string::npos != name.rfind(".mp4", name.length() - 4, 4)) {
+            do_extract_video(argv[arg_idx], name);
+        } else if (std::string::npos != name.rfind(".jpg", name.length() - 4, 4)
+                || std::string::npos != name.rfind(".jpeg", name.length() - 5, 5)
+                || std::string::npos != name.rfind(".png", name.length() - 4, 4)) {
+            do_extract_image(argv[arg_idx], name);
+        }
+
+                
 	}
 	return 0;
 }

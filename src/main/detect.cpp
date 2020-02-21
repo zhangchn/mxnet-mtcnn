@@ -110,7 +110,7 @@ static void detect() {
         return;
     }
 
-    p_mtcnn->SetFactorMinSize(0.709, 220);
+    p_mtcnn->SetFactorMinSize(0.709, 120);
     p_mtcnn->LoadModule(model_dir);
     init_mutex.unlock();
     do {
