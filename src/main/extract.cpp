@@ -58,17 +58,17 @@ static void do_extract_image(const char *filepath, const std::string &filename)
 	detectStop();
 }
 
-static void do_extract_video(const char *filepath, const std::string &filename)
+static void do_extract_video(const char *filepath, const std::string &filename, int frame_stride)
 {
 	cv::VideoCapture camera(filepath, cv::CAP_FFMPEG);
 	detectSetup(1, 3, cb2);
 	//cv::namedWindow(DISP_WINNANE, cv::WINDOW_AUTOSIZE);
 	current_file = filename;
 	current_out_idx=0;
-	int frame_stride = 20;
+	//int frame_stride = 20;
 	do {
         cv::Mat img;
-        for (int counter = 1; counter < frame_stride; counter++) {
+        for (int counter = 0; counter < frame_stride; counter++) {
             camera.grab(); 
         }
         camera >> img;
@@ -89,8 +89,21 @@ static void do_extract_video(const char *filepath, const std::string &filename)
 int main(int argc, char* argv[])
 {
 	//cv::VideoCapture camera("rtsp://admin:8358s12s@192.168.1.38", cv::CAP_FFMPEG);
+    int video_stride = 0;
 	for (int arg_idx = 1; arg_idx < argc; arg_idx++) {
-		std::string fpath(argv[arg_idx], strlen(argv[arg_idx]));
+		std::string argument(argv[arg_idx], strlen(argv[arg_idx]));
+
+        if (argument == "--video-stride") {
+            if (arg_idx == argc - 1) {
+                std::cerr << "Usage: --video-stride N" << std::endl << "  skip n frames before each input frame for video" << std::endl;
+                return -1;
+            }
+            video_stride = atoi(argv[arg_idx+1]);
+            arg_idx ++;
+            continue;
+        }
+        std::string &fpath = argument;
+
 		char *cfname = basename(argv[arg_idx]);
 		std::string name(cfname, strlen(cfname)); 
 		if (access(argv[arg_idx], R_OK) != 0) {
@@ -99,7 +112,7 @@ int main(int argc, char* argv[])
 		}
 		std::cout << "processing input:" << fpath << std::endl;
         if (std::string::npos != name.rfind(".mp4", name.length() - 4, 4)) {
-            do_extract_video(argv[arg_idx], name);
+            do_extract_video(argv[arg_idx], name, video_stride);
         } else if (std::string::npos != name.rfind(".jpg", name.length() - 4, 4)
                 || std::string::npos != name.rfind(".jpeg", name.length() - 5, 5)
                 || std::string::npos != name.rfind(".png", name.length() - 4, 4)) {
