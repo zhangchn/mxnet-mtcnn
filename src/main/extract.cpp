@@ -40,7 +40,6 @@ void cb2(std::vector<face_box> faces, const cv::Mat &image, void* userData) {
 static void do_extract_image(const char *filepath, const std::string &filename)
 {
     std::cout << "detect image: "<< filename << std::endl;
-	detectSetup(1, 3, cb2);
     cv::Mat img = cv::imread(filepath);
     current_file = filename;
 	current_out_idx=0;
@@ -55,13 +54,12 @@ static void do_extract_image(const char *filepath, const std::string &filename)
             return pending == 0;
             });
 
-	detectStop();
 }
 
 static void do_extract_video(const char *filepath, const std::string &filename, int frame_stride)
 {
 	cv::VideoCapture camera(filepath, cv::CAP_FFMPEG);
-	detectSetup(1, 3, cb2);
+	//detectSetup(1, 3, cb2);
 	//cv::namedWindow(DISP_WINNANE, cv::WINDOW_AUTOSIZE);
 	current_file = filename;
 	current_out_idx=0;
@@ -83,13 +81,15 @@ static void do_extract_video(const char *filepath, const std::string &filename, 
         lk.unlock();
         detectImage(img, (void *)filepath);
 	} while (true);
-	detectStop();
+	//detectStop();
 }
 
 int main(int argc, char* argv[])
 {
 	//cv::VideoCapture camera("rtsp://admin:8358s12s@192.168.1.38", cv::CAP_FFMPEG);
     int video_stride = 0;
+    int num_threads = 1;
+    std::vector<std::string> file_args;
 	for (int arg_idx = 1; arg_idx < argc; arg_idx++) {
 		std::string argument(argv[arg_idx], strlen(argv[arg_idx]));
 
@@ -101,25 +101,41 @@ int main(int argc, char* argv[])
             video_stride = atoi(argv[arg_idx+1]);
             arg_idx ++;
             continue;
+        } else if (argument == "--nthreads") {
+            if (arg_idx == argc - 1) {
+                std::cerr << "Usage: --video-stride N" << std::endl << "  skip n frames before each input frame for video" << std::endl;
+                return -1;
+            }
+            num_threads = atoi(argv[arg_idx+1]);
+            arg_idx++;
+            continue;
         }
-        std::string &fpath = argument;
+        file_args.push_back(argument);
+    }
 
-		char *cfname = basename(argv[arg_idx]);
+    detectSetup(num_threads, 3, cb2);
+    for(auto it = file_args.begin();
+           it != file_args.end();
+           ++it) { 
+        std::string &fpath = *it;
+        const char *arg_str = fpath.c_str();
+		char *cfname = basename(arg_str);
 		std::string name(cfname, strlen(cfname)); 
-		if (access(argv[arg_idx], R_OK) != 0) {
+		if (access(arg_str, R_OK) != 0) {
 			std::cout << "access failed:" <<fpath << std::endl;
 			continue;
 		}
 		std::cout << "processing input:" << fpath << std::endl;
         if (std::string::npos != name.rfind(".mp4", name.length() - 4, 4)) {
-            do_extract_video(argv[arg_idx], name, video_stride);
+            do_extract_video(arg_str, name, video_stride);
         } else if (std::string::npos != name.rfind(".jpg", name.length() - 4, 4)
                 || std::string::npos != name.rfind(".jpeg", name.length() - 5, 5)
                 || std::string::npos != name.rfind(".png", name.length() - 4, 4)) {
-            do_extract_image(argv[arg_idx], name);
+            do_extract_image(arg_str, name);
         }
 
                 
 	}
+    detectStop();
 	return 0;
 }
