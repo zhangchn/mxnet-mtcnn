@@ -158,14 +158,14 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
 
     cal_pyramid_list(img_h,img_w,min_size_,factor_,win_list);
 
-    std::cout << "win list size: " << win_list.size() << std::endl;
-    std::cout << "====Run PNet====" << std::endl;
+    //std::cout << "win list size: " << win_list.size() << std::endl;
+    //std::cout << "====Run PNet====" << std::endl;
 
     unsigned long start_time = get_cur_time();
     // TODO: can use multiple thread ??
     for(int i=0;i<win_list.size();i++)
     {
-        std::cout << "scale window. height: " << win_list[i].h << " width: " << win_list[i].w << std::endl;
+        //std::cout << "scale window. height: " << win_list[i].h << " width: " << win_list[i].w << std::endl;
         std::vector<face_box>boxes;
 
         RunPNet(img,win_list[i],boxes);
@@ -173,7 +173,7 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
         total_pnet_boxes.insert(total_pnet_boxes.end(),boxes.begin(),boxes.end());
     }
     unsigned long end_time = get_cur_time();
-    std::cout << "====Run PNet time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run PNet time eclipsed: " << end_time - start_time << " us" << std::endl;
 
 
     std::vector<face_box> pnet_boxes;
@@ -181,19 +181,19 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
     start_time = get_cur_time();
     process_boxes(total_pnet_boxes,img_h,img_w,pnet_boxes);
     end_time = get_cur_time();
-    std::cout << "====Run Process PNet Boxes time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run Process PNet Boxes time eclipsed: " << end_time - start_time << " us" << std::endl;
 
     if(pnet_boxes.size()==0)
         return;
 
-    std::cout << "PNet boxes size: " << pnet_boxes.size() << " RNet batch bound: " << rnet_batch_bound_ << std::endl;
+    //std::cout << "PNet boxes size: " << pnet_boxes.size() << " RNet batch bound: " << rnet_batch_bound_ << std::endl;
 
     start_time = get_cur_time();
 
     if(pnet_boxes.size()>rnet_batch_bound_)
     {
         //batch mode
-        std::cout << "===Run RNet====" << std::endl;
+        //std::cout << "===Run RNet====" << std::endl;
         RunRNet(img,pnet_boxes,total_rnet_boxes);
 
     }
@@ -203,7 +203,7 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
         {
             face_box out_box;
 
-            std::cout << "===Run PreLoadRNet====" << std::endl;
+            //std::cout << "===Run PreLoadRNet====" << std::endl;
 
             if(RunPreLoadRNet(img, pnet_boxes[i],out_box)<0)
                 continue;
@@ -215,16 +215,16 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
 
     end_time = get_cur_time();
 
-    std::cout << "====Run RNet time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run RNet time eclipsed: " << end_time - start_time << " us" << std::endl;
 
 
     std::vector<face_box> rnet_boxes;
     start_time = get_cur_time();		
     process_boxes(total_rnet_boxes,img_h,img_w,rnet_boxes);
     end_time = get_cur_time();
-    std::cout << "====Run Process RNet Boxes time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run Process RNet Boxes time eclipsed: " << end_time - start_time << " us" << std::endl;
 
-    std::cout << "RNet boxes size: " << rnet_boxes.size() << " ONet batch bound: " << onet_batch_bound_ << std::endl;
+    //std::cout << "RNet boxes size: " << rnet_boxes.size() << " ONet batch bound: " << onet_batch_bound_ << std::endl;
 
     if(rnet_boxes.size()==0)
         return;
@@ -233,7 +233,7 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
 
     if(rnet_boxes.size()>onet_batch_bound_)
     {
-        std::cout << "===Run ONet====" << std::endl;
+        //std::cout << "===Run ONet====" << std::endl;
 
         RunONet(img,rnet_boxes, total_onet_boxes);
     }
@@ -243,7 +243,7 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
         {
             face_box out_box;
 
-            std::cout << "===Run PreLoadONet====" << std::endl;
+            //std::cout << "===Run PreLoadONet====" << std::endl;
 
             if(RunPreLoadONet(img, rnet_boxes[i],out_box)<0)
                 continue;
@@ -255,20 +255,20 @@ void MxNetMtcnn::Detect(cv::Mat& orig_img, std::vector<face_box>& face_list)
 
     end_time = get_cur_time();
 
-    std::cout << "====Run ONet time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run ONet time eclipsed: " << end_time - start_time << " us" << std::endl;
 
     //calculate the landmark
     start_time = get_cur_time();
     cal_landmark(total_onet_boxes);
     end_time = get_cur_time();
-    std::cout << "====Run LandMark time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run LandMark time eclipsed: " << end_time - start_time << " us" << std::endl;
 
     //Get Final Result
     start_time = get_cur_time();	
     regress_boxes(total_onet_boxes);
     nms_boxes(total_onet_boxes, 0.7, NMS_MIN,face_list);
     end_time = get_cur_time();
-    std::cout << "====Run nmsbox time eclipsed: " << end_time - start_time << " us" << std::endl;
+    //std::cout << "====Run nmsbox time eclipsed: " << end_time - start_time << " us" << std::endl;
 
 }
 
